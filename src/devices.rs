@@ -120,7 +120,7 @@ impl Discovery {
                 devices.push(Device {
                     key: key.into(),
                     name: name.into(),
-                    detail: format!("Saves jobs to {}", folder.display()),
+                    detail: format!("Saves jobs to {}", home_relative(folder)),
                     transport: Transport::Simulated { folder: folder.clone() },
                 });
             }
@@ -164,6 +164,14 @@ impl Discovery {
             });
         }
         devices
+    }
+}
+
+// "~/Documents/..." instead of the full path with the user name
+fn home_relative(path: &std::path::Path) -> String {
+    match dirs::home_dir().and_then(|home| path.strip_prefix(home).ok().map(PathBuf::from)) {
+        Some(relative) => format!("~/{}", relative.display()),
+        None => path.display().to_string(),
     }
 }
 

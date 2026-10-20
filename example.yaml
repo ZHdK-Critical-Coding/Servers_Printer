@@ -1,0 +1,11 @@
+name: "Printer Server"
+date: 2026-10-20
+author: Urs Hofer
+technology: "Rust"
+maincategory: utilities
+category: servers
+related:
+  - P5_Output_Printers_ThermalPrinter_Lines
+  - P5_Output_Printers_ThermalPrinter_Bitmap
+  - P5_Output_Printers_LinePrinter
+  - P5_Output_Printers_CUPS

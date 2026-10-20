@@ -1,4 +1,6 @@
-# Rust: Printer Server for macOS
+# Rust: Printer Server
+
+[Deutsch](README_DE.md)
 
 A small macOS app that makes printers connected to a Mac available to p5
 sketches over WebSocket. It speaks exactly the same protocols as the
@@ -11,7 +13,8 @@ so the sketches
 [P5_Output_Printers_LinePrinter](https://github.com/ZHdK-Critical-Coding/P5_Output_Printers_LinePrinter)
 work without changes: only `printerConnection` has to point to the Mac.
 A third, new protocol prints the sketch as an image on any CUPS printer
-(office printers, inkjets, everything in *System Settings → Printers*).
+(office printers, inkjets, everything in *System Settings → Printers*), see
+[P5_Output_Printers_CUPS](https://github.com/ZHdK-Critical-Coding/P5_Output_Printers_CUPS).
 
 ## Installation
 
@@ -21,50 +24,10 @@ open it and drag **Printer Server** into *Applications*. The app is signed
 and notarized and runs on Apple Silicon and Intel Macs with macOS 11 or
 newer.
 
-### Building it Yourself
-
-Requirements: [Rust](https://rustup.rs/), macOS 11 or newer. libusb is built into the app, nothing else has to be installed.
-
-```sh
-./scripts/bundle-macos.sh              # dist/Printer Server.app for this Mac
-./scripts/bundle-macos.sh --universal  # Apple Silicon and Intel
-```
-
-For `--universal`, add the targets once:
-`rustup target add aarch64-apple-darwin x86_64-apple-darwin`.
-
-### Signed and Notarized Build
-
-To pass the app on to other Macs without security warnings, sign and
-notarize it with a Developer ID:
-
-```sh
-./scripts/notarize-macos.sh               # Apple Silicon and Intel
-./scripts/notarize-macos.sh --native      # only this Mac's architecture
-./scripts/notarize-macos.sh --sign-only   # sign and check, send nothing to Apple
-```
-
-Results in `dist/`: the stapled app, a `.zip` and a `.dmg`. Needed once:
-a *Developer ID Application* certificate in the keychain and notary
-credentials stored with an
-[app-specific password](https://appleid.apple.com):
-
-```sh
-xcrun notarytool store-credentials printer-server \
-  --apple-id you@example.com --team-id ABCDE12345 --password xxxx-xxxx-xxxx-xxxx
-```
-
-Other names: `NOTARY_PROFILE=<name>`, other certificate:
-`IDENTITY="Developer ID Application: ..."`.
-
-Dependencies (`Cargo.toml`): `eframe` (GUI), `tokio` +
-`tokio-tungstenite` (WebSocket), `rusb` (USB, with libusb built in),
-`image` (PNG/JPEG), `flate2` (PDF compression).
-
 ## How to Run
 
-1. Start `dist/Printer Server.app` (or `cargo run` while developing). On
-   first start, allow incoming connections when macOS asks.
+1. Start **Printer Server** from *Applications*. On first start, allow
+   incoming connections when macOS asks.
 2. The window lists all printers found: USB printers, printer device files
    and CUPS queues. Plugging a printer in or out updates the list.
 3. Choose the **mode** of each printer in its drop-down and **check** the
@@ -81,12 +44,12 @@ start.
 | --- | --- | --- | --- |
 | Thermal (ESC/POS) | 8080 | `printer-websockets` | ThermalPrinter_Lines, ThermalPrinter_Bitmap |
 | Line printer (ESC/P) | 8090 | `lp-websockets` | LinePrinter |
-| CUPS image | 8070 | new, see below | `examples/P5_Output_Printers_CUPS` |
+| CUPS image | 8070 | new, see below | CUPS |
 
 ### Without a Printer: Simulation
 
 ```sh
-cargo run -- --simulate
+"/Applications/Printer Server.app/Contents/MacOS/printer-server" --simulate
 ```
 
 adds three simulated printers that save every job to
@@ -101,7 +64,7 @@ orange and noted in the log: put that address into the sketch. To choose
 other start ports:
 
 ```sh
-"dist/Printer Server.app/Contents/MacOS/printer-server" --thermal-port 9080 --line-port 9090 --cups-port 9070
+"/Applications/Printer Server.app/Contents/MacOS/printer-server" --thermal-port 9080 --line-port 9090 --cups-port 9070
 ```
 
 On some Macs, Safari's WebDriver (`safaridriver`) occupies 8080 while it
@@ -205,8 +168,6 @@ Servers_Printer/
 │   ├── bitmap.rs     # Image → black and white dots (threshold, dithering)
 │   ├── pdf.rs        # Image → PDF page for CUPS
 │   └── cp437.rs      # Text encoding
-├── examples/
-│   └── P5_Output_Printers_CUPS/   # Sketch for the CUPS image protocol
 └── scripts/
     ├── bundle-macos.sh            # Builds the .app
     └── notarize-macos.sh          # Signs and notarizes app, zip and dmg
@@ -220,3 +181,45 @@ The selection and modes are saved in
 are remembered by their USB ids (`usb:04b8:0e02`), so they stay selected in
 any USB port; identical printers are numbered (`usb:04b8:0e02#2`). A
 damaged settings file is kept as `settings.json.damaged`.
+
+### Building the App
+
+Requirements: [Rust](https://rustup.rs/), macOS 11 or newer. libusb is
+built into the app, nothing else has to be installed. `cargo run` starts it
+while developing (`cargo run -- --simulate` without printers).
+
+```sh
+./scripts/bundle-macos.sh              # dist/Printer Server.app for this Mac
+./scripts/bundle-macos.sh --universal  # Apple Silicon and Intel
+```
+
+For `--universal`, add the targets once:
+`rustup target add aarch64-apple-darwin x86_64-apple-darwin`.
+
+Dependencies (`Cargo.toml`): `eframe` (GUI), `tokio` +
+`tokio-tungstenite` (WebSocket), `rusb` (USB, with libusb built in),
+`image` (PNG/JPEG), `flate2` (PDF compression).
+
+#### Signed and Notarized
+
+To pass the app on to other Macs without security warnings, sign and
+notarize it with a Developer ID:
+
+```sh
+./scripts/notarize-macos.sh               # Apple Silicon and Intel
+./scripts/notarize-macos.sh --native      # only this Mac's architecture
+./scripts/notarize-macos.sh --sign-only   # sign and check, send nothing to Apple
+```
+
+Results in `dist/`: the stapled app, a `.zip` and a `.dmg`. Needed once:
+a *Developer ID Application* certificate in the keychain and notary
+credentials stored with an
+[app-specific password](https://appleid.apple.com):
+
+```sh
+xcrun notarytool store-credentials printer-server \
+  --apple-id you@example.com --team-id ABCDE12345 --password xxxx-xxxx-xxxx-xxxx
+```
+
+Other names: `NOTARY_PROFILE=<name>`, other certificate:
+`IDENTITY="Developer ID Application: ..."`.
