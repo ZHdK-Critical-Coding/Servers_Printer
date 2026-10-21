@@ -353,11 +353,14 @@ fn write_usb(vendor: u16, product: u16, bus: u8, ports: &[u8], data: &[u8]) -> R
                     sent += n;
                     total += n;
                 }
-                // The endpoint is still halted from an interrupted job ("Pipe error"): reset it
-                // and try again. Only before any data went through, so nothing is sent twice.
-                Err(rusb::Error::Pipe) if total == 0 && !retried => {
+                // The endpoint is stuck from an interrupted job ("Pipe error" or, with Prolific
+                // parallel adapters, "Input/Output Error"): reset it and try again. Clearing the
+                // halt is not enough for these adapters, selecting the setting again resets them.
+                // Only before any data went through, so nothing is sent twice.
+                Err(rusb::Error::Pipe | rusb::Error::Io) if total == 0 && !retried => {
                     retried = true;
                     let _ = handle.clear_halt(endpoint);
+                    let _ = handle.set_alternate_setting(number, setting);
                 }
                 Err(e) => return Err(format!("USB write failed: {e}{}", port_status(&handle, number))),
             }
